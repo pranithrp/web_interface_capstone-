@@ -1,0 +1,170 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Production builds
+/client/build
+/server/dist
+build/
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Python virtual environment
+.venv/
+venv/
+env/
+.python-version
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Windows specific files
+*.exe
+*.dll
+*.lnk
+
+# User-specific directories and files
+Application Data/
+Cookies/
+Local Settings/
+My Documents/
+NetHood/
+PrintHood/
+Recent/
+SendTo/
+Start Menu/
+Templates/
+AppData/
+Contacts/
+Documents/
+Downloads/
+Dropbox/
+Favorites/
+Links/
+Music/
+Pictures/
+Saved Games/
+Searches/
+Videos/
+
+# Development tools and caches
+.cache/
+.chocolatey/
+.conda/
+.condarc
+.continuum/
+.docker/
+.eclipse/
+.jupyter/
+.keras/
+.kube/
+.ssh/
+.streamlit/
+.viminfo
+.ollama/
+.cursor/
+
+# Database files
+*.sqlite3
+*.db
+
+# Backup files
+*.backup
+*.bak
+
+# Windows system files
+NTUSER.DAT*
+*.regtrans-ms
+*.TM.blf
+*.TxR.*
+
+# Large files and binaries
+*.zip
+*.rar
+*.7z
+*.iso
+*.exe
+*.msi
+*.dmg
+
+# Exclude other project directories
+../RAG chatbot/
+../Capstone/
+../ai-symptom-checker/
+../lambda-serverless/
+../python programs/
+../templates/
+../utils/
+../data/
+../CD_Assignment_2/
+../Compier Design/
+../DTR/
+../FIFTH SEM/
+../FOURTH SEM/
+../GestureControlledRobot-using-Opencv/
+../Integrated/
+../PSWC/
+../Pictures/
+../Placement Subjects/
+../SIXTH SEM/
+../THIRD SEM/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Git specific
+.gitconfig
