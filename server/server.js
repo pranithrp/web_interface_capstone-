@@ -4,6 +4,7 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const apiRoutes = require("./Routes/api");
+const axios = require("axios");
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +33,29 @@ mongoose.connect("mongodb://localhost:27017/rpm_db", {
 // Socket.io Setup
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+
+  // Live patient monitoring feature
+  let monitoringInterval = null;
+
+  socket.on("start_monitoring", async () => {
+    if (monitoringInterval) return; // Prevent multiple intervals
+    monitoringInterval = setInterval(async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/get_streaming_data");
+        // Emit the received data to the client
+        socket.emit("patient_condition", response.data);
+      } catch (error) {
+        console.error("Error fetching ML data:", error.message);
+      }
+    }, 2000);
+  });
+
+  socket.on("stop_monitoring", () => {
+    if (monitoringInterval) {
+      clearInterval(monitoringInterval);
+      monitoringInterval = null;
+    }
+  });
 
 
   // Join a room based on patient-doctor pair
@@ -120,6 +144,10 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
+    if (monitoringInterval) {
+      clearInterval(monitoringInterval);
+      monitoringInterval = null;
+    }
   });
 });
 
