@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const HeartRateDataViewer = ({ patientId, patientName, onClose }) => {
+const HeartRateDataViewer = ({ patientId, patientName, onClose, warnings = [], heartRateHistory = [] }) => {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [heartRateData, setHeartRateData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('live'); // 'live' or 'historical'
 
   useEffect(() => {
     fetchHeartRateFiles();
@@ -46,8 +47,16 @@ const HeartRateDataViewer = ({ patientId, patientName, onClose }) => {
   };
 
   const getHeartRateStatus = (heartRate) => {
-    if (heartRate < 60) return { status: 'Low', color: 'text-blue-600 bg-blue-100' };
-    if (heartRate > 100) return { status: 'High', color: 'text-red-600 bg-red-100' };
+    if (heartRate < 60) return { 
+      status: 'Bradycardia', 
+      color: 'text-blue-600 bg-blue-100',
+      severity: heartRate < 50 ? 'Critical' : 'Warning'
+    };
+    if (heartRate > 100) return { 
+      status: 'Tachycardia', 
+      color: 'text-red-600 bg-red-100',
+      severity: heartRate > 120 ? 'Critical' : 'Warning'
+    };
     return { status: 'Normal', color: 'text-green-600 bg-green-100' };
   };
 
@@ -71,6 +80,32 @@ const HeartRateDataViewer = ({ patientId, patientName, onClose }) => {
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          {/* View Mode Selector */}
+          <div className="mb-6">
+            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+              <button
+                onClick={() => setViewMode('live')}
+                className={`px-4 py-2 rounded-md font-medium transition-all ${
+                  viewMode === 'live'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-blue-600'
+                }`}
+              >
+                📊 Live Data & Warnings
+              </button>
+              <button
+                onClick={() => setViewMode('historical')}
+                className={`px-4 py-2 rounded-md font-medium transition-all ${
+                  viewMode === 'historical'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-blue-600'
+                }`}
+              >
+                📁 Historical Files
+              </button>
+            </div>
+          </div>
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
@@ -84,8 +119,176 @@ const HeartRateDataViewer = ({ patientId, patientName, onClose }) => {
             </div>
           )}
 
-          {/* File Selection */}
-          {!selectedFile && !loading && (
+          {/* Live Data View */}
+          {viewMode === 'live' && (
+            <div className="space-y-6">
+              {/* Real-time Warnings */}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-xl border border-orange-200">
+                <h3 className="text-lg font-semibold text-orange-800 mb-4 flex items-center gap-2">
+                  <span className="text-xl">⚠️</span>
+                  Real-time Warnings & Alerts
+                  {warnings.length > 0 && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      {warnings.length}
+                    </span>
+                  )}
+                </h3>
+                
+                {warnings.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {warnings.map((warning) => (
+                      <div key={warning.id} className={`p-4 rounded-lg border-2 ${
+                        warning.severity === 'Critical' 
+                          ? 'bg-red-100 border-red-300 text-red-800'
+                          : 'bg-yellow-100 border-yellow-300 text-yellow-800'
+                      }`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-lg">
+                                {warning.type.toUpperCase()}
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                warning.severity === 'Critical' 
+                                  ? 'bg-red-200 text-red-700'
+                                  : 'bg-yellow-200 text-yellow-700'
+                              }`}>
+                                {warning.severity}
+                              </span>
+                            </div>
+                            <div className="text-sm">
+                              Heart Rate: <span className="font-semibold">{warning.heart_rate} bpm</span>
+                            </div>
+                            <div className="text-xs opacity-75 mt-1">
+                              {warning.timestamp.toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="text-2xl">
+                            {warning.severity === 'Critical' ? '🚨' : '⚠️'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">✅</div>
+                    <p className="text-green-600 font-medium">No warnings detected</p>
+                    <p className="text-gray-500 text-sm">Patient's heart rate is within normal range</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Live Heart Rate History */}
+              {heartRateHistory.length > 0 && (
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Live Heart Rate History</h3>
+                  
+                  {/* Enhanced Graph */}
+                  <div className="h-64 relative bg-gray-50 rounded-lg p-4">
+                    <svg className="w-full h-full" viewBox="0 0 400 200">
+                      {/* Grid lines */}
+                      <defs>
+                        <pattern id="grid" width="40" height="25" patternUnits="userSpaceOnUse">
+                          <path d="M 40 0 L 0 0 0 25" fill="none" stroke="#e5e7eb" strokeWidth="1"/>
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill="url(#grid)" />
+                      
+                      {/* Reference lines */}
+                      <line x1="0" y1="140" x2="400" y2="140" stroke="#ef4444" strokeWidth="1" strokeDasharray="5,5" opacity="0.5"/>
+                      <line x1="0" y1="100" x2="400" y2="100" stroke="#10b981" strokeWidth="1" strokeDasharray="5,5" opacity="0.5"/>
+                      <line x1="0" y1="60" x2="400" y2="60" stroke="#3b82f6" strokeWidth="1" strokeDasharray="5,5" opacity="0.5"/>
+                      
+                      {/* Heart rate line */}
+                      <polyline
+                        fill="none"
+                        stroke="#6366f1"
+                        strokeWidth="3"
+                        points={
+                          heartRateHistory.map((reading, index) => {
+                            const x = (index / (heartRateHistory.length - 1)) * 380 + 10;
+                            const y = 190 - ((reading.heart_rate - 40) / 140) * 180;
+                            return `${x},${y}`;
+                          }).join(' ')
+                        }
+                      />
+                      
+                      {/* Data points */}
+                      {heartRateHistory.map((reading, index) => {
+                        const x = (index / (heartRateHistory.length - 1)) * 380 + 10;
+                        const y = 190 - ((reading.heart_rate - 40) / 140) * 180;
+                        return (
+                          <circle
+                            key={index}
+                            cx={x}
+                            cy={y}
+                            r="4"
+                            fill={reading.abnormality?.severity === 'critical' ? "#dc2626" : 
+                                 reading.abnormality?.severity === 'warning' ? "#d97706" : "#059669"}
+                            stroke="#fff"
+                            strokeWidth="2"
+                          />
+                        );
+                      })}
+                    </svg>
+                    
+                    {/* Labels */}
+                    <div className="absolute left-0 top-0 text-xs text-gray-500">180</div>
+                    <div className="absolute left-0 top-1/4 text-xs text-gray-500">140</div>
+                    <div className="absolute left-0 top-1/2 text-xs text-gray-500">100</div>
+                    <div className="absolute left-0 top-3/4 text-xs text-gray-500">60</div>
+                    <div className="absolute left-0 bottom-0 text-xs text-gray-500">40</div>
+                  </div>
+                  
+                  {/* Recent readings table */}
+                  <div className="mt-4">
+                    <h4 className="font-medium text-gray-700 mb-2">Recent Readings</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto">
+                      <div className="grid grid-cols-4 gap-4 text-sm font-medium text-gray-700 mb-2">
+                        <div>Time</div>
+                        <div>Heart Rate</div>
+                        <div>Status</div>
+                        <div>Alert</div>
+                      </div>
+                      {heartRateHistory.slice(-10).reverse().map((reading, index) => {
+                        const status = getHeartRateStatus(reading.heart_rate);
+                        return (
+                          <div key={index} className="grid grid-cols-4 gap-4 text-sm py-2 border-b border-gray-200">
+                            <div className="text-gray-600">
+                              {reading.timestamp.toLocaleTimeString()}
+                            </div>
+                            <div className="font-semibold">
+                              {reading.heart_rate} bpm
+                            </div>
+                            <div>
+                              <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>
+                                {status.status}
+                              </span>
+                            </div>
+                            <div>
+                              {reading.abnormality && (
+                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                  reading.abnormality.severity === 'critical' 
+                                    ? 'bg-red-200 text-red-700'
+                                    : 'bg-yellow-200 text-yellow-700'
+                                }`}>
+                                  {reading.abnormality.severity}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Historical Files View */}
+          {viewMode === 'historical' && !selectedFile && !loading && (
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Heart Rate Files</h3>
               {files.length === 0 ? (

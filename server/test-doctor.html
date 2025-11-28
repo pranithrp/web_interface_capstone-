@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Doctor Listener</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 6px; height: 60vh; overflow: auto; }
+      input { padding: 6px; }
+    </style>
+  </head>
+  <body>
+    <h2>Test Doctor - threat_alert listener</h2>
+    <p>Enter a doctorId (room) to join. Use <code>DR_TEST</code> for quick tests.</p>
+    <input id="doctorId" placeholder="Doctor ID (e.g. DR_TEST)" value="DR_TEST" />
+    <button id="join">Join Room</button>
+    <button id="leave">Leave Room</button>
+
+    <h3>Connection & Alerts</h3>
+    <div id="log">Not connected</div>
+
+    <!-- socket.io client CDN -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+      const logEl = document.getElementById('log');
+      const doctorIdInput = document.getElementById('doctorId');
+      const joinBtn = document.getElementById('join');
+      const leaveBtn = document.getElementById('leave');
+
+      const append = (text) => { logEl.textContent = new Date().toISOString() + ' | ' + text + '\n' + logEl.textContent; };
+
+      // Connect to server
+      const socket = io('http://localhost:5000', { transports: ['websocket', 'polling'] });
+
+      socket.on('connect', () => {
+        append('Connected to server: ' + socket.id);
+      });
+
+      socket.on('disconnect', () => {
+        append('Disconnected from server');
+      });
+
+      // Generic threat listener
+      socket.on('threat_alert', (payload) => {
+        append('RECEIVED threat_alert:\n' + JSON.stringify(payload, null, 2));
+      });
+
+      joinBtn.onclick = () => {
+        const id = doctorIdInput.value.trim();
+        if (!id) return;
+        socket.emit('join_doctor_room', { doctorId: id });
+        append('Requested join_doctor_room: ' + id);
+      };
+
+      leaveBtn.onclick = () => {
+        const id = doctorIdInput.value.trim();
+        if (!id) return;
+        // There's no explicit leave handler; we'll just disconnect then reconnect
+        socket.disconnect();
+        setTimeout(() => {
+          location.reload();
+        }, 300);
+      };
+    </script>
+  </body>
+</html>

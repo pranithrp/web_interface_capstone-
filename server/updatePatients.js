@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 const Patient = require("./models/Patient");
 
-// MongoDB Connection
-mongoose.connect("mongodb://localhost:27017/rpm_db", {
+// MongoDB Connection (supports MONGODB_URI env var)
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/rpm_db";
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-}).then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
+}).then(() => console.log(`MongoDB connected to ${MONGODB_URI}`))
+  .catch((err) => console.log("MongoDB connection error:", err));
 
 const updatePatients = async () => {
   try {

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test File Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin: 20px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, button { padding: 10px; margin: 5px 0; }
+        input[type="file"] { width: 100%; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 FedShield File Upload Test</h1>
+        <p>Test the file upload functionality for patient files.</p>
+        
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="patientId">Patient ID:</label>
+                <input type="text" id="patientId" value="P001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="fileInput">Select File:</label>
+                <input type="file" id="fileInput" required>
+            </div>
+            
+            <button type="submit">Upload to FedShield</button>
+        </form>
+        
+        <div id="result"></div>
+        
+        <div style="margin-top: 40px;">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Make sure both frontend (port 3000) and backend (port 5000) are running</li>
+                <li>Select a file (any text file, image, or document)</li>
+                <li>Click "Upload to FedShield"</li>
+                <li>If successful, you'll get a SHA-256 token</li>
+                <li>Use this token in the main application to retrieve the file</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            const patientId = document.getElementById('patientId').value;
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                resultDiv.innerHTML = '<div class="error">❌ Please select a file</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div>⏳ Uploading file...</div>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('patientId', patientId);
+                
+                const response = await fetch('/api/fedshield/upload-patient-file', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ <strong>Upload Successful!</strong><br>
+                            📁 File: ${result.fileName}<br>
+                            🔑 Token: <code>${result.token}</code><br>
+                            💡 Copy this token to retrieve the file in the main application
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Upload failed: ${result.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Upload failed: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

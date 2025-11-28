@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FedShield - Secure File Storage</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .upload-area { border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 8px; }
+        .upload-area:hover { border-color: #007bff; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input[type="text"] { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        .result { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        .token { font-family: monospace; background: #e9ecef; padding: 5px; border-radius: 3px; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ FedShield - Secure File Storage</h1>
+    <p>Upload files securely with blockchain-verified tokens</p>
+
+    <div class="container">
+        <h2>Upload File</h2>
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <p>Click here to select a file or drag and drop</p>
+            <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
+        </div>
+        <div id="uploadResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Retrieve File</h2>
+        <input type="text" id="tokenInput" placeholder="Enter file token">
+        <button onclick="retrieveFile()">Retrieve File</button>
+        <div id="retrieveResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Token Information</h2>
+        <input type="text" id="tokenInfoInput" placeholder="Enter token for information">
+        <button onclick="getTokenInfo()">Get Token Info</button>
+        <div id="tokenInfoResult"></div>
+    </div>
+
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('uploadResult').innerHTML = `
+                        <div class="result">
+                            <h3>✅ File Uploaded Successfully!</h3>
+                            <p><strong>File:</strong> ${result.fileName}</p>
+                            <p><strong>Token:</strong> <span class="token">${result.token}</span></p>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            <p><em>Save this token to retrieve your file later!</em></p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = `
+                    <div class="error">
+                        <h3>❌ Upload Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function retrieveFile() {
+            const token = document.getElementById('tokenInput').value.trim();
+            
+            if (!token) {
+                alert('Please enter a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/file/${token}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('retrieveResult').innerHTML = `
+                        <div class="result">
+                            <h3>✅ File Retrieved Successfully!</h3>
+                            <p><strong>File Name:</strong> ${result.fileName}</p>
+                            <p><strong>Content Type:</strong> ${result.contentType}</p>
+                            <p><strong>Content:</strong></p>
+                            <pre style="background: white; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">${result.content}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Retrieval failed');
+                }
+            } catch (error) {
+                document.getElementById('retrieveResult').innerHTML = `
+                    <div class="error">
+                        <h3>❌ Retrieval Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function getTokenInfo() {
+            const token = document.getElementById('tokenInfoInput').value.trim();
+            
+            if (!token) {
+                alert('Please enter a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/token/${token}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('tokenInfoResult').innerHTML = `
+                        <div class="result">
+                            <h3>📋 Token Information</h3>
+                            <p><strong>Token:</strong> <span class="token">${result.token}</span></p>
+                            <p><strong>File Name:</strong> ${result.fileName}</p>
+                            <p><strong>File Size:</strong> ${result.fileSize} bytes</p>
+                            <p><strong>Content Type:</strong> ${result.contentType}</p>
+                            <p><strong>Owner:</strong> ${result.owner}</p>
+                            <p><strong>Timestamp:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+                            <p><strong>Status:</strong> ${result.isActive ? '🟢 Active' : '🔴 Inactive'}</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Token info retrieval failed');
+                }
+            } catch (error) {
+                document.getElementById('tokenInfoResult').innerHTML = `
+                    <div class="error">
+                        <h3>❌ Token Info Retrieval Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#007bff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                uploadFile();
+            }
+        });
+    </script>
+</body>
+</html>
